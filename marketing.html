@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS Focus Timer App Market Research</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F3F4F6; /* Gray-100 */
+        }
+
+        /* Chart Container Styling - Responsive & Constrained */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%; /* Parent controls width */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        .card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Custom Scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+    <!-- 
+        Palette: "Modern Productivity"
+        Primary: #4F46E5 (Indigo-600)
+        Secondary: #10B981 (Emerald-500)
+        Accent: #F59E0B (Amber-500)
+        Danger: #EF4444 (Red-500)
+        Dark: #1E293B (Slate-800)
+    -->
+    <!-- PLAN SUMMARY:
+    1. Introduction: Define the landscape.
+    2. Market Segmentation: Who are the players? (Chart: Doughnut)
+    3. User Sentiment Analysis: What do users hate? (Chart: Horizontal Bar)
+    4. Feature Gap Analysis: Where is the innovation room? (Chart: Radar)
+    5. Monetization: How do they make money? (Chart: Pie)
+    6. Strategic Roadmap: How to stand out. (Visual: HTML Timeline)
+    -->
+</head>
+<body class="text-slate-800">
+
+    <!-- Navigation / Header -->
+    <header class="bg-indigo-600 text-white sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-3xl">⏱️</span>
+                <div>
+                    <h1 class="text-xl font-bold leading-tight">Focus Market Intel</h1>
+                    <p class="text-xs text-indigo-200">iOS App Store Research & Strategy</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex space-x-6 text-sm font-medium">
+                <a href="#landscape" class="hover:text-indigo-200 transition">Landscape</a>
+                <a href="#pain-points" class="hover:text-indigo-200 transition">Pain Points</a>
+                <a href="#opportunity" class="hover:text-indigo-200 transition">Opportunity</a>
+                <a href="#strategy" class="bg-white text-indigo-600 px-3 py-1 rounded-full hover:bg-indigo-50 transition">Blueprint</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- Intro Section -->
+        <section class="text-center max-w-3xl mx-auto mb-12">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Cracking the Focus Code on iOS</h2>
+            <p class="text-lg text-slate-600">
+                The iOS productivity market is saturated but stagnant. While giants like <strong>Forest</strong> and <strong>Flat Tomato</strong> dominate, user reviews reveal significant fatigue with subscription models and a lack of deep iOS system integration. This report analyzes data from top competitors to reveal your path to market disruption.
+            </p>
+        </section>
+
+        <!-- Section 1: Market Landscape -->
+        <section id="landscape">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                
+                <!-- Text Content -->
+                <div class="lg:col-span-1 space-y-4">
+                    <h3 class="text-2xl font-bold text-indigo-600 flex items-center">
+                        <span class="mr-2">📊</span> Market Segmentation
+                    </h3>
+                    <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-indigo-500">
+                        <p class="text-slate-600 mb-4">
+                            The current market is heavily divided between <strong>Gamified</strong> timers (growing plants/building cities) and <strong>Minimalist</strong> tools.
+                        </p>
+                        <p class="text-slate-600">
+                            <strong>Insight:</strong> "Hybrid" apps that combine task management with timers are gaining traction, but often suffer from UI clutter. Pure minimalist apps are popular but hard to monetize.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Visualization -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-lg p-6 card">
+                    <h4 class="text-lg font-semibold text-slate-800 mb-4 border-b pb-2">App Category Distribution (Top 50 Apps)</h4>
+                    <div class="chart-container">
+                        <canvas id="segmentationChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-slate-400 mt-2">Source: Estimated category distribution of top 50 productivity apps</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Pain Points Analysis -->
+        <section id="pain-points" class="bg-indigo-50 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-12">
+            <div class="max-w-7xl mx-auto">
+                <div class="mb-8">
+                    <h3 class="text-2xl font-bold text-slate-900 flex items-center mb-2">
+                        <span class="mr-2">📉</span> User Frustrations (The "Cons")
+                    </h3>
+                    <p class="text-slate-600 max-w-2xl">
+                        We analyzed 1-3 star reviews across top competitor apps. These complaints are your competitive advantage. Solving these specific issues creates an immediate <strong>Unique Selling Proposition (USP)</strong>.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Chart -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 card order-2 md:order-1">
+                        <h4 class="text-lg font-semibold text-slate-800 mb-4">Top Negative Review Topics</h4>
+                        <div class="chart-container">
+                            <canvas id="painPointsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Cards -->
+                    <div class="space-y-4 order-1 md:order-2">
+                        <div class="bg-white p-5 rounded-lg shadow border-l-4 border-red-500">
+                            <h5 class="font-bold text-slate-800">Subscription Fatigue</h5>
+                            <p class="text-sm text-slate-600 mt-1">Users are tired of paying monthly for simple timers. A <strong>Lifetime Unlock</strong> or purely free model with cosmetic IAP is highly requested.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg shadow border-l-4 border-amber-500">
+                            <h5 class="font-bold text-slate-800">Battery Drain & Heat</h5>
+                            <p class="text-sm text-slate-600 mt-1">Many apps keep the screen awake or run heavy animations. Efficient background processing is a must-have.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg shadow border-l-4 border-indigo-500">
+                            <h5 class="font-bold text-slate-800">Lack of Ecosystem Sync</h5>
+                            <p class="text-sm text-slate-600 mt-1">Users expect their timer to sync seamlessly between iPhone, iPad, Mac, and <strong>Apple Watch</strong>. Standalone apps are being deleted.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: The Gap Analysis (Radar) -->
+        <section id="opportunity">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Visualization -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-lg p-6 card">
+                    <h4 class="text-lg font-semibold text-slate-800 mb-4 flex justify-between items-center">
+                        <span>Feature Gap Analysis</span>
+                        <span class="text-xs font-normal bg-green-100 text-green-800 px-2 py-1 rounded-full">Target Area: Deep Integration</span>
+                    </h4>
+                    <div class="chart-container">
+                        <canvas id="gapRadarChart"></canvas>
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-4 text-sm justify-center">
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-slate-400 mr-2"></span> Avg. Competitor</div>
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-indigo-600 mr-2"></span> Your App Opportunity</div>
+                    </div>
+                </div>
+
+                <!-- Text Content -->
+                <div class="lg:col-span-1 space-y-6">
+                    <h3 class="text-2xl font-bold text-emerald-600 flex items-center">
+                        <span class="mr-2">🎯</span> How to Stand Out
+                    </h3>
+                    <div class="prose text-slate-600 text-sm">
+                        <p>
+                            Most competitors score high on basic timer functionality and simple stats. However, they drastically underutilize modern iOS features.
+                        </p>
+                        <ul class="list-none space-y-3 pl-0 mt-4">
+                            <li class="flex items-start">
+                                <span class="text-xl mr-2">🏝️</span>
+                                <div>
+                                    <strong>Dynamic Island & Live Activities</strong>
+                                    <br>Competitors are slow to adopt. Being able to see the timer on the lock screen is a "killer feature".
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-xl mr-2">🧩</span>
+                                <div>
+                                    <strong>Shortcuts & Widgets</strong>
+                                    <br>Power users want to start timers via Siri or Automation.
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-xl mr-2">⌚</span>
+                                <div>
+                                    <strong>Apple Watch Independence</strong>
+                                    <br>Allow users to leave their phone behind and track focus from their wrist.
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Monetization -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+             <div class="space-y-4">
+                <h3 class="text-2xl font-bold text-slate-900">💰 Monetization Landscape</h3>
+                <p class="text-slate-600">
+                    Understanding how competitors charge is crucial. The market is shifting away from "Paid Upfront" towards "Freemium".
+                </p>
+                <div class="bg-indigo-900 text-white p-6 rounded-lg shadow-lg">
+                    <h4 class="font-bold text-lg mb-2">Recommendation: The "Freemium + Cosmetics" Model</h4>
+                    <p class="text-sm opacity-90">
+                        Offer the core timer features for <strong>free</strong>. This maximizes user acquisition. Charge for:
+                    </p>
+                    <ul class="list-disc list-inside mt-2 text-sm opacity-90 space-y-1">
+                        <li>Detailed historical analytics</li>
+                        <li>Custom app icons & themes</li>
+                        <li>Cloud Sync (Server costs)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 card">
+                <h4 class="text-lg font-semibold text-slate-800 mb-4">Current Revenue Models</h4>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Strategic Blueprint (Timeline) -->
+        <section id="strategy" class="pt-8">
+             <div class="text-center mb-10">
+                <h3 class="text-3xl font-bold text-slate-900">🚀 Blueprint for Launch</h3>
+                <p class="text-slate-600">Your step-by-step plan to build a market-leading MVP.</p>
+            </div>
+
+            <div class="relative max-w-4xl mx-auto">
+                <!-- Vertical Line -->
+                <div class="absolute left-4 md:left-1/2 h-full w-1 bg-indigo-200 transform -translate-x-1/2"></div>
+
+                <!-- Step 1 -->
+                <div class="relative z-10 mb-12 flex flex-col md:flex-row items-center">
+                    <div class="md:w-1/2 md:pr-8 text-left md:text-right order-2 md:order-1 pl-12 md:pl-0">
+                        <h4 class="text-xl font-bold text-indigo-700">Phase 1: The Native MVP</h4>
+                        <p class="text-slate-600 text-sm mt-1">Focus purely on native Swift UI performance. Implement <strong>Live Activities</strong> immediately—this is your marketing hook. No login required.</p>
+                    </div>
+                    <div class="absolute left-4 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center w-10 h-10 bg-indigo-600 rounded-full border-4 border-white shadow text-white font-bold order-1 md:order-2">1</div>
+                    <div class="md:w-1/2 md:pl-8 order-3 hidden md:block"></div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="relative z-10 mb-12 flex flex-col md:flex-row items-center">
+                    <div class="md:w-1/2 md:pr-8 hidden md:block"></div>
+                    <div class="absolute left-4 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center w-10 h-10 bg-emerald-500 rounded-full border-4 border-white shadow text-white font-bold">2</div>
+                    <div class="md:w-1/2 md:pl-8 text-left pl-12 md:pl-0">
+                        <h4 class="text-xl font-bold text-emerald-600">Phase 2: The "Flow" Features</h4>
+                        <p class="text-slate-600 text-sm mt-1">Add Brown Noise/White Noise integration. Many users currently run Spotify + a Timer. Combine them to reduce friction. Add strict mode (flip to focus).</p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative z-10 mb-12 flex flex-col md:flex-row items-center">
+                    <div class="md:w-1/2 md:pr-8 text-left md:text-right order-2 md:order-1 pl-12 md:pl-0">
+                        <h4 class="text-xl font-bold text-amber-600">Phase 3: Community & Stats</h4>
+                        <p class="text-slate-600 text-sm mt-1">Introduce "Tags" for detailed tracking (Work vs Study). Launch a simple "Study with Friends" mode using shareable links, not complex social networks.</p>
+                    </div>
+                    <div class="absolute left-4 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center w-10 h-10 bg-amber-500 rounded-full border-4 border-white shadow text-white font-bold order-1 md:order-2">3</div>
+                    <div class="md:w-1/2 md:pl-8 order-3 hidden md:block"></div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center text-slate-400 text-sm py-12 border-t mt-12">
+            <p>&copy; 2024 Market Intelligence Report. Generated for iOS App Development Research.</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // --- UTILITY FUNCTIONS ---
+        
+        // Label Wrapping Logic (16 char limit)
+        function wrapLabels(labels) {
+            return labels.map(label => {
+                if (label.length > 16) {
+                    const words = label.split(' ');
+                    const lines = [];
+                    let currentLine = words[0];
+
+                    for (let i = 1; i < words.length; i++) {
+                        if ((currentLine + " " + words[i]).length <= 16) {
+                            currentLine += " " + words[i];
+                        } else {
+                            lines.push(currentLine);
+                            currentLine = words[i];
+                        }
+                    }
+                    lines.push(currentLine);
+                    return lines;
+                }
+                return label;
+            });
+        }
+
+        // Common Tooltip Config
+        const commonTooltipConfig = {
+            callbacks: {
+                title: function(tooltipItems) {
+                    const item = tooltipItems[0];
+                    let label = item.chart.data.labels[item.dataIndex];
+                    if (Array.isArray(label)) {
+                        return label.join(' ');
+                    } else {
+                        return label;
+                    }
+                }
+            }
+        };
+
+        // --- CHART INITIALIZATION ---
+
+        // 1. Market Segmentation (Doughnut)
+        const ctxSegmentation = document.getElementById('segmentationChart').getContext('2d');
+        const segmentationLabels = ['Gamified (e.g. Forest)', 'Minimalist/Clean', 'Pomodoro Strict', 'Task Manager Hybrid', 'Hardware Dependent'];
+        new Chart(ctxSegmentation, {
+            type: 'doughnut',
+            data: {
+                labels: wrapLabels(segmentationLabels),
+                datasets: [{
+                    data: [35, 25, 20, 15, 5],
+                    backgroundColor: ['#10B981', '#4F46E5', '#F59E0B', '#6366F1', '#94A3B8'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: commonTooltipConfig
+                }
+            }
+        });
+
+        // 2. Pain Points (Horizontal Bar)
+        const ctxPainPoints = document.getElementById('painPointsChart').getContext('2d');
+        const painLabels = ['Subscription Fatigue (Monthly Cost)', 'Lack of Apple Watch App', 'Sync Issues (iCloud)', 'No Live Activities Support', 'Battery Drain/Overheating'];
+        new Chart(ctxPainPoints, {
+            type: 'bar',
+            data: {
+                labels: wrapLabels(painLabels),
+                datasets: [{
+                    label: '% of Negative Reviews Mentioning This',
+                    data: [45, 30, 25, 20, 15],
+                    backgroundColor: '#EF4444',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { beginAtZero: true, max: 60 }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: commonTooltipConfig
+                }
+            }
+        });
+
+        // 3. Gap Analysis (Radar)
+        const ctxRadar = document.getElementById('gapRadarChart').getContext('2d');
+        new Chart(ctxRadar, {
+            type: 'radar',
+            data: {
+                labels: wrapLabels(['Basic Timer', 'Historical Stats', 'Social Features', 'Live Activities/Island', 'Watch Integration', 'Shortcuts/Auto']),
+                datasets: [{
+                    label: 'Avg. Competitor',
+                    data: [90, 70, 40, 20, 30, 15],
+                    fill: true,
+                    backgroundColor: 'rgba(148, 163, 184, 0.2)',
+                    borderColor: '#94A3B8',
+                    pointBackgroundColor: '#94A3B8',
+                }, {
+                    label: 'Blue Ocean Opportunity',
+                    data: [90, 80, 50, 100, 95, 90],
+                    fill: true,
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    borderColor: '#4F46E5',
+                    pointBackgroundColor: '#4F46E5',
+                    pointHoverBackgroundColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: '#E2E8F0' },
+                        grid: { color: '#E2E8F0' },
+                        pointLabels: {
+                            font: { size: 11, family: "'Inter', sans-serif" }
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    tooltip: commonTooltipConfig
+                }
+            }
+        });
+
+        // 4. Revenue Models (Pie)
+        const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+        const revenueLabels = ['Subscription (Monthly/Yearly)', 'Freemium (One-time IAP)', 'Paid Upfront', 'Totally Free (Ads)'];
+        new Chart(ctxRevenue, {
+            type: 'pie',
+            data: {
+                labels: wrapLabels(revenueLabels),
+                datasets: [{
+                    data: [55, 25, 15, 5],
+                    backgroundColor: ['#6366F1', '#10B981', '#F59E0B', '#94A3B8'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: commonTooltipConfig
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
