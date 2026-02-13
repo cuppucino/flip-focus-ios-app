@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, Animated, Easing } from 'react-native';
 import { CircularProgress } from './CircularProgress';
 import { format_timer } from '../utils/statsHelpers';
+import { useTheme } from '../context/ThemeContext';
 
 interface TimerDisplayProps {
   seconds: number;
@@ -16,12 +17,12 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
   daily_goal_minutes,
   today_total_seconds,
 }) => {
+  const { colors } = useTheme();
   const pulse_anim = useRef(new Animated.Value(1)).current;
   const glow_anim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
     if (is_active) {
-      // Breathing pulse animation
       const pulse_loop = Animated.loop(
         Animated.sequence([
           Animated.timing(pulse_anim, {
@@ -40,7 +41,6 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       );
       pulse_loop.start();
 
-      // Glow animation
       const glow_loop = Animated.loop(
         Animated.sequence([
           Animated.timing(glow_anim, {
@@ -67,12 +67,10 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
     }
   }, [is_active]);
 
-  // Calculate daily goal progress (including current session)
   const total_today = today_total_seconds + (is_active ? seconds : 0);
   const goal_seconds = daily_goal_minutes * 60;
   const goal_progress = goal_seconds > 0 ? total_today / goal_seconds : 0;
 
-  // Timer progress for the current session (cycles every 60 min)
   const session_progress = is_active ? (seconds % 3600) / 3600 : 0;
 
   const messages = [
@@ -91,32 +89,34 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
           size={280}
           stroke_width={is_active ? 8 : 6}
           progress={is_active ? session_progress : goal_progress}
-          color_start={is_active ? '#6C63FF' : '#10B981'}
+          color_start={is_active ? '#6C63FF' : colors.success}
           color_end={is_active ? '#A78BFA' : '#34D399'}
-          bg_color={is_active ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}
+          bg_color={is_active ? 'rgba(255,255,255,0.06)' : (colors.bg_primary === '#F8F9FC' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)')}
         >
           <View style={styles.inner_content}>
-            <Text style={[styles.timer_text, is_active ? styles.active_text : styles.idle_text]}>
+            <Text style={[styles.timer_text, { color: is_active ? '#FFFFFF' : colors.text_primary }]}>
               {format_timer(seconds)}
             </Text>
-            <Text style={[styles.status_text, is_active ? styles.active_status : styles.idle_status]}>
+            <Text style={[styles.status_text, { color: is_active ? 'rgba(255,255,255,0.7)' : colors.text_secondary }]}>
               {is_active ? messages[message_index] : 'Flip to Focus'}
             </Text>
           </View>
         </CircularProgress>
       </Animated.View>
 
-      {/* Goal progress indicator (shown when idle) */}
       {!is_active && daily_goal_minutes > 0 && (
         <View style={styles.goal_container}>
-          <Text style={styles.goal_text}>
+          <Text style={[styles.goal_text, { color: colors.text_secondary }]}>
             Daily Goal: {Math.round(total_today / 60)}m / {daily_goal_minutes}m
           </Text>
-          <View style={styles.goal_bar_bg}>
+          <View style={[styles.goal_bar_bg, { backgroundColor: colors.goal_bar_bg }]}>
             <View
               style={[
                 styles.goal_bar_fill,
-                { width: `${Math.min(goal_progress * 100, 100)}%` },
+                {
+                  width: `${Math.min(goal_progress * 100, 100)}%`,
+                  backgroundColor: colors.success,
+                },
               ]}
             />
           </View>
@@ -145,23 +145,11 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     letterSpacing: 2,
   },
-  active_text: {
-    color: '#FFFFFF',
-  },
-  idle_text: {
-    color: '#1a1a2e',
-  },
   status_text: {
     marginTop: 8,
     fontSize: 15,
     fontWeight: '500',
     letterSpacing: 0.5,
-  },
-  active_status: {
-    color: 'rgba(255,255,255,0.7)',
-  },
-  idle_status: {
-    color: '#6B7280',
   },
   goal_container: {
     marginTop: 30,
@@ -170,20 +158,17 @@ const styles = StyleSheet.create({
   },
   goal_text: {
     fontSize: 13,
-    color: '#6B7280',
     marginBottom: 8,
     fontWeight: '500',
   },
   goal_bar_bg: {
     width: '100%',
     height: 6,
-    backgroundColor: 'rgba(0,0,0,0.06)',
     borderRadius: 3,
     overflow: 'hidden',
   },
   goal_bar_fill: {
     height: '100%',
-    backgroundColor: '#10B981',
     borderRadius: 3,
   },
 });

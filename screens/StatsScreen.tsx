@@ -15,8 +15,10 @@ import { StatsCard } from '../components/StatsCard';
 import { WeeklyChart } from '../components/WeeklyChart';
 import { StreakBadge } from '../components/StreakBadge';
 import { HistoryDisplay } from '../components/HistoryDisplay';
+import { useTheme } from '../context/ThemeContext';
 
 export const StatsScreen = () => {
+  const { colors } = useTheme();
   const [sessions, set_sessions] = useState<FocusSession[]>([]);
   const [refreshing, set_refreshing] = useState(false);
   const [daily_goal, set_daily_goal] = useState(DEFAULT_SETTINGS.daily_goal_minutes);
@@ -31,7 +33,6 @@ export const StatsScreen = () => {
     }
   };
 
-  // Reload data every time this tab becomes focused
   useFocusEffect(
     useCallback(() => {
       load_data();
@@ -64,77 +65,71 @@ export const StatsScreen = () => {
     : 0;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg_primary }]}>
       <ScrollView
         contentContainerStyle={styles.scroll_content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={on_refresh} tintColor="#6C63FF" />
+          <RefreshControl refreshing={refreshing} onRefresh={on_refresh} tintColor={colors.accent} />
         }
       >
-        {/* Header */}
-        <Text style={styles.header}>Dashboard</Text>
+        <Text style={[styles.header, { color: colors.text_primary }]}>Dashboard</Text>
 
-        {/* Streak */}
         <StreakBadge streak={streak} />
 
-        {/* Today's Stats */}
         <View style={styles.stats_row}>
           <StatsCard
             icon="time-outline"
             label="Today"
             value={format_duration(today_total)}
-            accent_color="#6C63FF"
+            accent_color={colors.accent}
           />
           <View style={{ width: 10 }} />
           <StatsCard
             icon="trophy-outline"
             label="Longest"
             value={format_duration(longest)}
-            accent_color="#F59E0B"
+            accent_color={colors.warning}
           />
           <View style={{ width: 10 }} />
           <StatsCard
             icon="checkmark-circle-outline"
             label="Sessions"
             value={`${today_sessions.length}`}
-            accent_color="#10B981"
+            accent_color={colors.success}
           />
         </View>
 
-        {/* Goal Progress */}
         {daily_goal > 0 && (
-          <View style={styles.goal_card}>
+          <View style={[styles.goal_card, { backgroundColor: colors.bg_card, shadowColor: colors.accent }]}>
             <View style={styles.goal_header}>
-              <Text style={styles.goal_title}>Daily Goal</Text>
-              <Text style={styles.goal_pct}>{goal_pct}%</Text>
+              <Text style={[styles.goal_title, { color: colors.text_primary }]}>Daily Goal</Text>
+              <Text style={[styles.goal_pct, { color: colors.accent }]}>{goal_pct}%</Text>
             </View>
-            <View style={styles.goal_bar_bg}>
+            <View style={[styles.goal_bar_bg, { backgroundColor: colors.goal_bar_bg }]}>
               <View
                 style={[
                   styles.goal_bar_fill,
                   {
                     width: `${goal_pct}%`,
-                    backgroundColor: goal_pct >= 100 ? '#10B981' : '#6C63FF',
+                    backgroundColor: goal_pct >= 100 ? colors.success : colors.accent,
                   },
                 ]}
               />
             </View>
-            <Text style={styles.goal_subtitle}>
+            <Text style={[styles.goal_subtitle, { color: colors.text_tertiary }]}>
               {format_duration(today_total)} / {format_duration(daily_goal * 60)}
               {goal_pct >= 100 ? ' — Goal reached! 🎉' : ''}
             </Text>
           </View>
         )}
 
-        {/* Weekly Chart */}
         <View style={styles.section}>
           <WeeklyChart data={weekly_data} />
         </View>
 
-        {/* Session History */}
         <View style={styles.section}>
-          <Text style={styles.section_title}>Session History</Text>
+          <Text style={[styles.section_title, { color: colors.text_primary }]}>Session History</Text>
           <HistoryDisplay sessions={sessions} on_delete={handle_delete} />
         </View>
       </ScrollView>
@@ -145,7 +140,6 @@ export const StatsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FC',
   },
   scroll_content: {
     paddingHorizontal: 20,
@@ -155,7 +149,6 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#1a1a2e',
     marginBottom: 20,
   },
   stats_row: {
@@ -164,11 +157,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   goal_card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 18,
     marginBottom: 16,
-    shadowColor: '#6C63FF',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -183,16 +174,13 @@ const styles = StyleSheet.create({
   goal_title: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1a1a2e',
   },
   goal_pct: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#6C63FF',
   },
   goal_bar_bg: {
     height: 8,
-    backgroundColor: '#F3F4F6',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 8,
@@ -203,7 +191,6 @@ const styles = StyleSheet.create({
   },
   goal_subtitle: {
     fontSize: 12,
-    color: '#9CA3AF',
     fontWeight: '500',
   },
   section: {
@@ -212,7 +199,6 @@ const styles = StyleSheet.create({
   section_title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1a1a2e',
     marginBottom: 14,
   },
 });

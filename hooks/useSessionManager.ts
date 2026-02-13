@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus, Linking } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Accelerometer } from 'expo-sensors';
+import { Audio } from 'expo-av';
 import {
   save_active_session,
   get_active_session,
@@ -14,6 +15,9 @@ import { saveSession, getSessions, FocusSession, SessionTag } from '../storage/s
 import { get_settings, AppSettings, DEFAULT_SETTINGS } from '../storage/settingsStorage';
 import LiveActivityModule from '../native/LiveActivityModule';
 import { SoundOption } from '../components/SoundPlayer';
+
+// Completion chime URL (free, royalty-free)
+const COMPLETION_SOUND_URI = 'https://cdn.pixabay.com/audio/2022/11/21/audio_dc39bbb00e.mp3';
 
 export type SessionPhase =
   | 'idle'           // no session, show start button
@@ -54,6 +58,7 @@ export const useSessionManager = () => {
 
   const timer_ref = useRef<NodeJS.Timeout | null>(null);
   const phase_ref = useRef<SessionPhase>('idle');
+  const completion_sound_ref = useRef<Audio.Sound | null>(null);
   const tag_ref = useRef<SessionTag>('work');
   const start_time_ref = useRef<number | null>(null);
 
@@ -61,10 +66,22 @@ export const useSessionManager = () => {
   useEffect(() => { start_time_ref.current = start_time; }, [start_time]);
   useEffect(() => { tag_ref.current = selected_tag; }, [selected_tag]);
 
-  // -- Initialize: check for interrupted sessions --
+  // -- Initialize: check for interrupted sessions + preload sound --
   useEffect(() => {
     const initialize = async () => {
       try {
+        // Preload completion sound
+        try {
+          const { sound } = await Audio.Sound.createAsync(
+            require('../assets/completion.mp3'),
+            { shouldPlay: false, volume: 0.7 }
+          );
+          completion_sound_ref.current = sound;
+        } catch (e) {
+          console.warn('Could not preload completion sound', e);
+        }
+
+
         const [app_settings, active, history] = await Promise.all([
           get_settings(),
           get_active_session(),
@@ -88,6 +105,13 @@ export const useSessionManager = () => {
       }
     };
     initialize();
+
+    return () => {
+      // Cleanup sound on unmount
+      if (completion_sound_ref.current) {
+        completion_sound_ref.current.unloadAsync().catch(() => {});
+      }
+    };
   }, []);
 
   // -- AppState listener: THE CORE MECHANIC --
@@ -114,12 +138,13 @@ export const useSessionManager = () => {
 
           console.log('[FlipFocus] Session STARTED via inactive transition');
 
-          await save_active_session({ start_time: now, started_via: 'lock' });
-
-          // Start Live Activity NOW while we still have foreground privileges
+          // Start Live Activity IMMEDIATELY (fire and forget / independent promise)
+          // to ensure it reaches native layer before suspension
           LiveActivityModule.startLiveActivity(now).catch((err: Error) =>
             console.log('[FlipFocus] Live Activity Error:', err)
           );
+
+          await save_active_session({ start_time: now, started_via: 'lock' });
         }
       }
 
@@ -138,11 +163,11 @@ export const useSessionManager = () => {
 
           console.log('[FlipFocus] Session STARTED via background fallback');
 
-          await save_active_session({ start_time: now, started_via: 'lock' });
-
           LiveActivityModule.startLiveActivity(now).catch((err: Error) =>
             console.log('[FlipFocus] Live Activity Error (bg fallback):', err)
           );
+
+          await save_active_session({ start_time: now, started_via: 'lock' });
         }
       }
 
@@ -267,6 +292,17 @@ export const useSessionManager = () => {
 
   // --- Helper functions ---
 
+  const play_completion_sound = async () => {
+    try {
+      if (completion_sound_ref.current) {
+        await completion_sound_ref.current.setPositionAsync(0);
+        await completion_sound_ref.current.playAsync();
+      }
+    } catch (e) {
+      console.warn('Could not play completion sound', e);
+    }
+  };
+
   const end_session = async (session_start: number, session_end: number, duration: number, tag?: SessionTag) => {
     try {
       await clear_active_session();
@@ -278,6 +314,10 @@ export const useSessionManager = () => {
 
       const current_settings = await get_settings();
       if (duration > current_settings.min_session_seconds) {
+        // Play completion sound + heavy haptic
+        play_completion_sound();
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+
         const new_session: FocusSession = {
           id: session_end.toString(),
           startTime: session_start,

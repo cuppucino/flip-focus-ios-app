@@ -11,12 +11,16 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { get_settings, save_settings, AppSettings, DEFAULT_SETTINGS } from '../storage/settingsStorage';
+import { get_settings, save_settings, AppSettings, DEFAULT_SETTINGS, ThemeMode } from '../storage/settingsStorage';
 import { clearHistory } from '../storage/sessionStorage';
+import { useTheme } from '../context/ThemeContext';
+import { schedule_daily_reminder, cancel_reminder } from '../utils/notificationHelper';
 
 export const SettingsScreen = () => {
+  const { colors, set_theme_mode } = useTheme();
   const [settings, set_settings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [goal_input, set_goal_input] = useState('');
+  const [reminder_hour_input, set_reminder_hour_input] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -29,6 +33,7 @@ export const SettingsScreen = () => {
       const s = await get_settings();
       set_settings(s);
       set_goal_input(s.daily_goal_minutes.toString());
+      set_reminder_hour_input(s.reminder_hour.toString());
     } catch (e) {
       console.error('Failed to load settings', e);
     }
@@ -39,6 +44,20 @@ export const SettingsScreen = () => {
       const updated = { ...settings, [key]: value };
       set_settings(updated);
       await save_settings({ [key]: value });
+
+      // Sync theme mode with ThemeContext
+      if (key === 'theme_mode') {
+        set_theme_mode(value as ThemeMode);
+      }
+
+      // Handle reminder scheduling
+      if (key === 'reminder_enabled') {
+        if (value) {
+          await schedule_daily_reminder(updated.reminder_hour);
+        } else {
+          await cancel_reminder();
+        }
+      }
     } catch (e) {
       console.error('Failed to save setting', e);
     }
@@ -50,6 +69,18 @@ export const SettingsScreen = () => {
       update_setting('daily_goal_minutes', parsed);
     } else {
       set_goal_input(settings.daily_goal_minutes.toString());
+    }
+  };
+
+  const handle_reminder_hour_submit = async () => {
+    const parsed = parseInt(reminder_hour_input, 10);
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 23) {
+      await update_setting('reminder_hour', parsed);
+      if (settings.reminder_enabled) {
+        await schedule_daily_reminder(parsed);
+      }
+    } else {
+      set_reminder_hour_input(settings.reminder_hour.toString());
     }
   };
 
@@ -85,22 +116,28 @@ export const SettingsScreen = () => {
 
   const sensitivity_options = [0.7, 0.8, 0.85, 0.9, 0.95];
 
+  const format_hour = (h: number) => {
+    const period = h >= 12 ? 'PM' : 'AM';
+    const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${display}:00 ${period}`;
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg_primary }]}>
       <ScrollView contentContainerStyle={styles.scroll_content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.header}>Settings</Text>
+        <Text style={[styles.header, { color: colors.text_primary }]}>Settings</Text>
 
         {/* Focus Goal Section */}
         <View style={styles.section}>
-          <Text style={styles.section_title}>Focus Goal</Text>
-          <View style={styles.card}>
+          <Text style={[styles.section_title, { color: colors.text_tertiary }]}>Focus Goal</Text>
+          <View style={[styles.card, { backgroundColor: colors.bg_card, shadowColor: colors.shadow_color }]}>
             <View style={styles.row}>
               <View style={styles.row_left}>
-                <Ionicons name="flag-outline" size={20} color="#6C63FF" />
-                <Text style={styles.row_label}>Daily Goal (minutes)</Text>
+                <Ionicons name="flag-outline" size={20} color={colors.accent} />
+                <Text style={[styles.row_label, { color: colors.text_primary }]}>Daily Goal (minutes)</Text>
               </View>
               <TextInput
-                style={styles.goal_input}
+                style={[styles.goal_input, { borderColor: colors.border, color: colors.accent, backgroundColor: colors.bg_input }]}
                 value={goal_input}
                 onChangeText={set_goal_input}
                 onBlur={handle_goal_submit}
@@ -115,10 +152,10 @@ export const SettingsScreen = () => {
 
         {/* Detection Section */}
         <View style={styles.section}>
-          <Text style={styles.section_title}>Flip Detection</Text>
-          <View style={styles.card}>
-            <Text style={styles.sensitivity_label}>Sensitivity</Text>
-            <Text style={styles.sensitivity_desc}>
+          <Text style={[styles.section_title, { color: colors.text_tertiary }]}>Flip Detection</Text>
+          <View style={[styles.card, { backgroundColor: colors.bg_card, shadowColor: colors.shadow_color }]}>
+            <Text style={[styles.sensitivity_label, { color: colors.text_primary }]}>Sensitivity</Text>
+            <Text style={[styles.sensitivity_desc, { color: colors.text_tertiary }]}>
               Higher sensitivity requires a more precise face-down angle to trigger
             </Text>
             <View style={styles.sensitivity_options}>
@@ -127,14 +164,16 @@ export const SettingsScreen = () => {
                   key={val}
                   style={[
                     styles.sensitivity_chip,
-                    settings.flip_sensitivity === val && styles.sensitivity_chip_active,
+                    { backgroundColor: colors.divider },
+                    settings.flip_sensitivity === val && { backgroundColor: colors.accent },
                   ]}
                   onPress={() => update_setting('flip_sensitivity', val)}
                 >
                   <Text
                     style={[
                       styles.sensitivity_chip_text,
-                      settings.flip_sensitivity === val && styles.sensitivity_chip_text_active,
+                      { color: colors.text_secondary },
+                      settings.flip_sensitivity === val && { color: '#FFFFFF' },
                     ]}
                   >
                     {sensitivity_labels[val]}
@@ -145,10 +184,10 @@ export const SettingsScreen = () => {
 
             <View style={[styles.row, { marginTop: 16 }]}>
               <View style={styles.row_left}>
-                <Ionicons name="timer-outline" size={20} color="#6C63FF" />
+                <Ionicons name="timer-outline" size={20} color={colors.accent} />
                 <View>
-                  <Text style={styles.row_label}>Min Session Duration</Text>
-                  <Text style={styles.row_desc}>{settings.min_session_seconds}s to save</Text>
+                  <Text style={[styles.row_label, { color: colors.text_primary }]}>Min Session Duration</Text>
+                  <Text style={[styles.row_desc, { color: colors.text_tertiary }]}>{settings.min_session_seconds}s to save</Text>
                 </View>
               </View>
             </View>
@@ -157,37 +196,144 @@ export const SettingsScreen = () => {
 
         {/* Preferences Section */}
         <View style={styles.section}>
-          <Text style={styles.section_title}>Preferences</Text>
-          <View style={styles.card}>
+          <Text style={[styles.section_title, { color: colors.text_tertiary }]}>Preferences</Text>
+          <View style={[styles.card, { backgroundColor: colors.bg_card, shadowColor: colors.shadow_color }]}>
+            {/* Theme Mode */}
             <View style={styles.row}>
               <View style={styles.row_left}>
-                <Ionicons name="hand-left-outline" size={20} color="#6C63FF" />
-                <Text style={styles.row_label}>Haptic Feedback</Text>
+                <Ionicons name="color-palette-outline" size={20} color={colors.accent} />
+                <Text style={[styles.row_label, { color: colors.text_primary }]}>Appearance</Text>
+              </View>
+            </View>
+            <View style={[styles.theme_selector, { backgroundColor: colors.divider }]}>
+              {(['light', 'system', 'dark'] as ThemeMode[]).map((mode) => {
+                const is_selected = settings.theme_mode === mode;
+                const icons: Record<ThemeMode, keyof typeof Ionicons.glyphMap> = {
+                  light: 'sunny-outline',
+                  system: 'phone-portrait-outline',
+                  dark: 'moon-outline',
+                };
+                const labels: Record<ThemeMode, string> = {
+                  light: 'Light',
+                  system: 'System',
+                  dark: 'Dark',
+                };
+                return (
+                  <TouchableOpacity
+                    key={mode}
+                    style={[
+                      styles.theme_option,
+                      is_selected && { backgroundColor: colors.accent },
+                    ]}
+                    onPress={() => update_setting('theme_mode', mode)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={icons[mode]}
+                      size={16}
+                      color={is_selected ? '#FFFFFF' : colors.text_secondary}
+                    />
+                    <Text
+                      style={[
+                        styles.theme_option_text,
+                        { color: is_selected ? '#FFFFFF' : colors.text_secondary },
+                      ]}
+                    >
+                      {labels[mode]}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+
+            {/* Haptic Feedback */}
+            <View style={styles.row}>
+              <View style={styles.row_left}>
+                <Ionicons name="hand-left-outline" size={20} color={colors.accent} />
+                <Text style={[styles.row_label, { color: colors.text_primary }]}>Haptic Feedback</Text>
               </View>
               <Switch
                 value={settings.haptics_enabled}
                 onValueChange={(v) => update_setting('haptics_enabled', v)}
-                trackColor={{ false: '#E5E7EB', true: '#C4B5FD' }}
-                thumbColor={settings.haptics_enabled ? '#6C63FF' : '#f4f3f4'}
+                trackColor={{ false: colors.switch_track_off, true: colors.switch_track_on }}
+                thumbColor={settings.haptics_enabled ? colors.accent : colors.switch_thumb_off}
               />
             </View>
           </View>
         </View>
 
+        {/* Notification Reminder Section */}
+        <View style={styles.section}>
+          <Text style={[styles.section_title, { color: colors.text_tertiary }]}>Reminders</Text>
+          <View style={[styles.card, { backgroundColor: colors.bg_card, shadowColor: colors.shadow_color }]}>
+            <View style={styles.row}>
+              <View style={styles.row_left}>
+                <Ionicons name="notifications-outline" size={20} color={colors.accent} />
+                <View>
+                  <Text style={[styles.row_label, { color: colors.text_primary }]}>Daily Reminder</Text>
+                  <Text style={[styles.row_desc, { color: colors.text_tertiary }]}>
+                    Remind me to focus
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={settings.reminder_enabled}
+                onValueChange={(v) => update_setting('reminder_enabled', v)}
+                trackColor={{ false: colors.switch_track_off, true: colors.switch_track_on }}
+                thumbColor={settings.reminder_enabled ? colors.accent : colors.switch_thumb_off}
+              />
+            </View>
+
+            {settings.reminder_enabled && (
+              <>
+                <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+                <View style={styles.row}>
+                  <View style={styles.row_left}>
+                    <Ionicons name="time-outline" size={20} color={colors.accent} />
+                    <View>
+                      <Text style={[styles.row_label, { color: colors.text_primary }]}>Reminder Time</Text>
+                      <Text style={[styles.row_desc, { color: colors.text_tertiary }]}>
+                        {format_hour(settings.reminder_hour)}
+                      </Text>
+                    </View>
+                  </View>
+                  <TextInput
+                    style={[styles.goal_input, { borderColor: colors.border, color: colors.accent, backgroundColor: colors.bg_input }]}
+                    value={reminder_hour_input}
+                    onChangeText={set_reminder_hour_input}
+                    onBlur={handle_reminder_hour_submit}
+                    onSubmitEditing={handle_reminder_hour_submit}
+                    keyboardType="number-pad"
+                    returnKeyType="done"
+                    maxLength={2}
+                    placeholder="20"
+                    placeholderTextColor={colors.text_tertiary}
+                  />
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+
         {/* Data Section */}
         <View style={styles.section}>
-          <Text style={styles.section_title}>Data</Text>
-          <TouchableOpacity style={styles.danger_button} onPress={handle_clear_history}>
-            <Ionicons name="trash-outline" size={20} color="#EF4444" />
-            <Text style={styles.danger_text}>Clear All Session History</Text>
+          <Text style={[styles.section_title, { color: colors.text_tertiary }]}>Data</Text>
+          <TouchableOpacity
+            style={[styles.danger_button, { backgroundColor: colors.danger_bg, borderColor: colors.danger_border }]}
+            onPress={handle_clear_history}
+          >
+            <Ionicons name="trash-outline" size={20} color={colors.danger} />
+            <Text style={[styles.danger_text, { color: colors.danger }]}>Clear All Session History</Text>
           </TouchableOpacity>
         </View>
 
         {/* About */}
         <View style={styles.about}>
-          <Text style={styles.about_name}>Flip Focus</Text>
-          <Text style={styles.about_version}>Version 1.0.0</Text>
-          <Text style={styles.about_desc}>
+          <Text style={[styles.about_name, { color: colors.accent }]}>Flip Focus</Text>
+          <Text style={[styles.about_version, { color: colors.text_tertiary }]}>Version 1.0.0</Text>
+          <Text style={[styles.about_desc, { color: colors.text_secondary }]}>
             Put your phone down. Pick up your focus.
           </Text>
         </View>
@@ -199,7 +345,6 @@ export const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FC',
   },
   scroll_content: {
     paddingHorizontal: 20,
@@ -209,7 +354,6 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#1a1a2e',
     marginBottom: 24,
   },
   section: {
@@ -218,17 +362,14 @@ const styles = StyleSheet.create({
   section_title: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#9CA3AF',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
     paddingLeft: 4,
   },
   card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -249,33 +390,31 @@ const styles = StyleSheet.create({
   row_label: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1a1a2e',
   },
   row_desc: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    marginVertical: 12,
   },
   goal_input: {
     width: 70,
     height: 38,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
     borderRadius: 10,
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '700',
-    color: '#6C63FF',
   },
   sensitivity_label: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1a1a2e',
     marginBottom: 4,
   },
   sensitivity_desc: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginBottom: 12,
   },
   sensitivity_options: {
@@ -287,33 +426,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-  },
-  sensitivity_chip_active: {
-    backgroundColor: '#6C63FF',
   },
   sensitivity_chip_text: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6B7280',
-  },
-  sensitivity_chip_text_active: {
-    color: '#FFFFFF',
   },
   danger_button: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#FEF2F2',
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#FECACA',
   },
   danger_text: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#EF4444',
   },
   about: {
     alignItems: 'center',
@@ -322,17 +450,33 @@ const styles = StyleSheet.create({
   about_name: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#6C63FF',
     marginBottom: 4,
   },
   about_version: {
     fontSize: 13,
-    color: '#9CA3AF',
     marginBottom: 8,
   },
   about_desc: {
     fontSize: 14,
-    color: '#6B7280',
     fontStyle: 'italic',
+  },
+  theme_selector: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    padding: 3,
+    marginTop: 10,
+  },
+  theme_option: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  theme_option_text: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

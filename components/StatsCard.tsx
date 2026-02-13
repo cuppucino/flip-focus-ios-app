@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 interface StatsCardProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -15,13 +16,15 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   value,
   accent_color = '#6C63FF',
 }) => {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.bg_card, shadowColor: colors.accent }]}>
       <View style={[styles.icon_bg, { backgroundColor: accent_color + '18' }]}>
         <Ionicons name={icon} size={20} color={accent_color} />
       </View>
-      <Text style={styles.value}>{value}</Text>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.value, { color: colors.text_primary }]}>{value}</Text>
+      <Text style={[styles.label, { color: colors.text_tertiary }]}>{label}</Text>
     </View>
   );
 };
@@ -29,11 +32,9 @@ export const StatsCard: React.FC<StatsCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    shadowColor: '#6C63FF',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -50,13 +51,11 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1a1a2e',
     marginBottom: 4,
   },
   label: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#9CA3AF',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },

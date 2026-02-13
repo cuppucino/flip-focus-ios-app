@@ -1,7 +1,16 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Dimensions,
+  Animated,
+  Easing,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format_duration } from '../utils/statsHelpers';
+import { useTheme } from '../context/ThemeContext';
 
 interface SessionSummaryProps {
   duration: number;        // seconds
@@ -10,12 +19,86 @@ interface SessionSummaryProps {
   on_dismiss: () => void;
 }
 
+// Particle config for confetti burst
+const PARTICLE_COUNT = 24;
+const PARTICLE_COLORS = ['#6C63FF', '#A78BFA', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899'];
+
+const create_particles = () =>
+  Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
+    id: i,
+    angle: (i / PARTICLE_COUNT) * 2 * Math.PI + (Math.random() - 0.5) * 0.5,
+    distance: 80 + Math.random() * 100,
+    size: 4 + Math.random() * 6,
+    color: PARTICLE_COLORS[i % PARTICLE_COLORS.length],
+    delay: Math.random() * 200,
+  }));
+
 export const SessionSummary: React.FC<SessionSummaryProps> = ({
   duration,
   start_time,
   tag,
   on_dismiss,
 }) => {
+  const { colors } = useTheme();
+
+  // Entrance animation
+  const slide_anim = useRef(new Animated.Value(0)).current;
+  // Counter animation
+  const [display_duration, set_display_duration] = useState(0);
+  const counter_started = useRef(false);
+  // Particle animations
+  const particle_anim = useRef(new Animated.Value(0)).current;
+  const particles = useRef(create_particles()).current;
+
+  const show_confetti = duration >= 25 * 60; // >= 25 minutes
+
+  useEffect(() => {
+    // Slide/fade entrance
+    Animated.spring(slide_anim, {
+      toValue: 1,
+      tension: 40,
+      friction: 8,
+      useNativeDriver: true,
+    }).start(() => {
+      // Start counter after entrance finishes
+      if (!counter_started.current) {
+        counter_started.current = true;
+        animate_counter();
+      }
+    });
+
+    // Fire confetti
+    if (show_confetti) {
+      Animated.timing(particle_anim, {
+        toValue: 1,
+        duration: 900,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+        delay: 300,
+      }).start();
+    }
+  }, []);
+
+  const animate_counter = () => {
+    const start = Date.now();
+    const anim_duration_ms = Math.min(1500, duration * 15); // cap at 1.5s
+
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / anim_duration_ms, 1);
+      // Ease-out for satisfying deceleration
+      const eased = 1 - Math.pow(1 - progress, 3);
+      set_display_duration(Math.floor(eased * duration));
+
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        set_display_duration(duration);
+      }
+    };
+    requestAnimationFrame(tick);
+  };
+
   const get_rating = (seconds: number): { emoji: string; title: string; message: string } => {
     const minutes = seconds / 60;
     if (minutes >= 90) return { emoji: '🏆', title: 'Legendary Session!', message: 'Over 90 minutes of pure focus. Incredible discipline.' };
@@ -33,52 +116,106 @@ export const SessionSummary: React.FC<SessionSummaryProps> = ({
     minute: '2-digit',
   });
 
+  const card_translate_y = slide_anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [60, 0],
+  });
+
   return (
     <View style={styles.overlay}>
-      <View style={styles.card}>
+      {/* Confetti particles */}
+      {show_confetti &&
+        particles.map((p) => {
+          const translate_x = particle_anim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, Math.cos(p.angle) * p.distance],
+          });
+          const translate_y = particle_anim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, Math.sin(p.angle) * p.distance],
+          });
+          const opacity = particle_anim.interpolate({
+            inputRange: [0, 0.2, 0.8, 1],
+            outputRange: [0, 1, 1, 0],
+          });
+          const scale = particle_anim.interpolate({
+            inputRange: [0, 0.5, 1],
+            outputRange: [0, 1.2, 0.3],
+          });
+
+          return (
+            <Animated.View
+              key={p.id}
+              style={[
+                styles.particle,
+                {
+                  width: p.size,
+                  height: p.size,
+                  borderRadius: p.size / 2,
+                  backgroundColor: p.color,
+                  opacity,
+                  transform: [{ translateX: translate_x }, { translateY: translate_y }, { scale }],
+                },
+              ]}
+            />
+          );
+        })}
+
+      <Animated.View
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.bg_card,
+            opacity: slide_anim,
+            transform: [{ translateY: card_translate_y }],
+          },
+        ]}
+      >
         {/* Big Emoji */}
         <Text style={styles.emoji}>{rating.emoji}</Text>
 
         {/* Title */}
-        <Text style={styles.title}>{rating.title}</Text>
+        <Text style={[styles.title, { color: colors.text_primary }]}>{rating.title}</Text>
 
-        {/* Duration */}
+        {/* Duration (animated counter) */}
         <View style={styles.duration_container}>
-          <Text style={styles.duration_value}>{format_duration(duration)}</Text>
-          <Text style={styles.duration_label}>of deep focus</Text>
+          <Text style={[styles.duration_value, { color: colors.accent }]}>
+            {format_duration(display_duration)}
+          </Text>
+          <Text style={[styles.duration_label, { color: colors.text_tertiary }]}>of deep focus</Text>
         </View>
 
         {/* Details */}
-        <View style={styles.details}>
+        <View style={[styles.details, { backgroundColor: colors.bg_primary }]}>
           {tag && (
             <View style={styles.detail_row}>
               <Text style={{ fontSize: 16 }}>{tag.emoji}</Text>
-              <Text style={styles.detail_text}>{tag.label}</Text>
+              <Text style={[styles.detail_text, { color: colors.text_secondary }]}>{tag.label}</Text>
             </View>
           )}
           <View style={styles.detail_row}>
-            <Ionicons name="time-outline" size={16} color="#9CA3AF" />
-            <Text style={styles.detail_text}>Started at {time_str}</Text>
+            <Ionicons name="time-outline" size={16} color={colors.text_tertiary} />
+            <Text style={[styles.detail_text, { color: colors.text_secondary }]}>Started at {time_str}</Text>
           </View>
           <View style={styles.detail_row}>
-            <Ionicons name="hourglass-outline" size={16} color="#9CA3AF" />
-            <Text style={styles.detail_text}>{Math.floor(duration / 60)} min {duration % 60} sec</Text>
+            <Ionicons name="hourglass-outline" size={16} color={colors.text_tertiary} />
+            <Text style={[styles.detail_text, { color: colors.text_secondary }]}>
+              {Math.floor(duration / 60)} min {duration % 60} sec
+            </Text>
           </View>
         </View>
 
         {/* Message */}
-        <Text style={styles.message}>{rating.message}</Text>
+        <Text style={[styles.message, { color: colors.text_secondary }]}>{rating.message}</Text>
 
         {/* Dismiss */}
-        <TouchableOpacity style={styles.dismiss_button} onPress={on_dismiss}>
+        <TouchableOpacity style={[styles.dismiss_button, { backgroundColor: colors.accent }]} onPress={on_dismiss}>
           <Text style={styles.dismiss_text}>Done</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 };
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   overlay: {
@@ -90,7 +227,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 28,
     paddingVertical: 40,
     paddingHorizontal: 30,
@@ -109,7 +245,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#1a1a2e',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -120,19 +255,16 @@ const styles = StyleSheet.create({
   duration_value: {
     fontSize: 48,
     fontWeight: '200',
-    color: '#6C63FF',
     letterSpacing: 2,
     fontVariant: ['tabular-nums'],
   },
   duration_label: {
     fontSize: 14,
-    color: '#9CA3AF',
     fontWeight: '500',
     marginTop: 4,
   },
   details: {
     width: '100%',
-    backgroundColor: '#F8F9FC',
     borderRadius: 14,
     padding: 16,
     marginBottom: 20,
@@ -145,19 +277,16 @@ const styles = StyleSheet.create({
   },
   detail_text: {
     fontSize: 14,
-    color: '#6B7280',
     fontWeight: '500',
   },
   message: {
     fontSize: 15,
-    color: '#6B7280',
     textAlign: 'center',
     marginBottom: 28,
     lineHeight: 22,
     fontStyle: 'italic',
   },
   dismiss_button: {
-    backgroundColor: '#6C63FF',
     paddingVertical: 14,
     paddingHorizontal: 48,
     borderRadius: 16,
@@ -167,5 +296,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  particle: {
+    position: 'absolute',
   },
 });

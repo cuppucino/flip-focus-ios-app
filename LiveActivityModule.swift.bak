@@ -1,0 +1,73 @@
+import ActivityKit
+import UIKit
+import Foundation
+
+
+@objc(LiveActivityModule)
+class LiveActivityModule: NSObject {
+  
+  @objc
+  func startLiveActivity(_ timestamp: Double, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+    if #available(iOS 16.2, *) {
+      let endTime = Date(timeIntervalSince1970: timestamp / 1000)
+      
+      let initialContentState = FlipFocusAttributes.ContentState(endTime: endTime)
+      let activityAttributes = FlipFocusAttributes()
+      
+      do {
+        print("LiveActivityModule: Requesting Live Activity...")
+        let activity = try Activity<FlipFocusAttributes>.request(
+          attributes: activityAttributes,
+          content: .init(state: initialContentState, staleDate: nil)
+        )
+        print("LiveActivityModule: Success! ID: \(activity.id)")
+        resolve(activity.id)
+      } catch {
+        print("LiveActivityModule: Failed to start activity: \(error)")
+        reject("ERR_ACTIVITY_START", "Failed to start activity", error)
+      }
+    } else {
+      let err = NSError(domain: "LiveActivityModule", code: 0, userInfo: [NSLocalizedDescriptionKey: "Live Activities are not supported on this iOS version"])
+      reject("ERR_IOS_VERSION", "Live Activities are not supported on this iOS version", err)
+    }
+  }
+
+  @objc
+  func stopLiveActivity(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+    if #available(iOS 16.2, *) {
+      Task {
+        for activity in Activity<FlipFocusAttributes>.activities {
+          await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        resolve(NSNull())
+      }
+    } else {
+      resolve(NSNull())
+    }
+  }
+  
+  // Enable proximity sensor to auto-turn-off screen when phone is face-down
+  @objc
+  func enableProximitySensor(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+    DispatchQueue.main.async {
+      UIDevice.current.isProximityMonitoringEnabled = true
+      print("LiveActivityModule: Proximity sensor enabled")
+      resolve(NSNull())
+    }
+  }
+  
+  // Disable proximity sensor
+  @objc
+  func disableProximitySensor(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+    DispatchQueue.main.async {
+      UIDevice.current.isProximityMonitoringEnabled = false
+      print("LiveActivityModule: Proximity sensor disabled")
+      resolve(NSNull())
+    }
+  }
+  
+  @objc
+  static func requiresMainQueueSetup() -> Bool {
+    return false
+  }
+}

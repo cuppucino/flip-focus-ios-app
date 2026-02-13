@@ -13,7 +13,7 @@ export interface ActiveSession {
 
 export interface PendingCompleted {
   start_time: number;
-  end_time: number;
+  end_time: number; 
   duration: number;
 }
 

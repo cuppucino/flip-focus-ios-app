@@ -15,9 +15,11 @@ import { SessionSummary } from '../components/SessionSummary';
 import { SoundPlayer } from '../components/SoundPlayer';
 import { get_today_sessions, get_total_seconds } from '../utils/statsHelpers';
 import { SESSION_TAGS } from '../storage/sessionStorage';
+import { useTheme } from '../context/ThemeContext';
 
 export const HomeScreen = () => {
   const { state, actions, sessions, settings } = useSessionManager();
+  const { colors, is_dark: theme_is_dark } = useTheme();
   const {
     phase,
     elapsed_seconds,
@@ -35,16 +37,16 @@ export const HomeScreen = () => {
   // Pulse animation for preparing state
   const pulse_anim = useRef(new Animated.Value(1)).current;
 
-  const is_dark = phase === 'focusing' || phase === 'preparing';
+  const is_session_dark = phase === 'focusing' || phase === 'preparing';
 
   useEffect(() => {
     Animated.timing(bg_anim, {
-      toValue: is_dark ? 1 : 0,
+      toValue: is_session_dark ? 1 : 0,
       duration: 600,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: false,
     }).start();
-  }, [is_dark]);
+  }, [is_session_dark]);
 
   // Animate the "put phone away" prompt
   useEffect(() => {
@@ -88,7 +90,7 @@ export const HomeScreen = () => {
 
   const bg_color = bg_anim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#F8F9FC', '#0F0F1A'],
+    outputRange: [colors.bg_primary, '#0F0F1A'],
   });
 
   // Get tag info for summary
@@ -104,8 +106,8 @@ export const HomeScreen = () => {
         {phase === 'idle' && (
           <>
             <View style={styles.idle_top}>
-              <Text style={styles.idle_greeting}>Ready to focus?</Text>
-              <Text style={styles.idle_subtitle}>
+              <Text style={[styles.idle_greeting, { color: colors.text_primary }]}>Ready to focus?</Text>
+              <Text style={[styles.idle_subtitle, { color: colors.text_tertiary }]}>
                 Start a session, then lock your phone{' '}
                 or flip it face-down.{'\n'}
                 Timer stops when you unlock.
@@ -123,7 +125,7 @@ export const HomeScreen = () => {
 
             <View style={styles.bottom_section}>
               <TouchableOpacity
-                style={styles.start_button}
+                style={[styles.start_button, { backgroundColor: colors.accent, shadowColor: colors.accent }]}
                 onPress={actions.start_session}
                 activeOpacity={0.85}
               >
@@ -132,8 +134,8 @@ export const HomeScreen = () => {
               </TouchableOpacity>
 
               <View style={styles.hint_row}>
-                <Ionicons name="information-circle-outline" size={14} color="#9CA3AF" />
-                <Text style={styles.hint_text}>
+                <Ionicons name="information-circle-outline" size={14} color={colors.text_tertiary} />
+                <Text style={[styles.hint_text, { color: colors.text_tertiary }]}>
                   Lock or flip your phone to start. Unlocking ends it.
                 </Text>
               </View>
@@ -173,15 +175,6 @@ export const HomeScreen = () => {
                 Stay away from your phone.
               </Text>
 
-              {/* Sound Selector */}
-              <View style={styles.selector_section}>
-                <SoundPlayer
-                  is_playing={false}
-                  selected_sound={selected_sound}
-                  on_select={actions.set_sound}
-                />
-              </View>
-
               <Text style={styles.preparing_detail}>
                 Timer starts when you lock or flip.
               </Text>
@@ -208,13 +201,6 @@ export const HomeScreen = () => {
                 today_total_seconds={today_total}
               />
             </View>
-
-            {/* Sound player (active during focus) */}
-            <SoundPlayer
-              is_playing={true}
-              selected_sound={selected_sound}
-              on_select={actions.set_sound}
-            />
 
             <View style={styles.bottom_section}>
               <View style={styles.active_indicator}>
@@ -267,19 +253,17 @@ const styles = StyleSheet.create({
 
   // Idle
   idle_top: {
-    paddingTop: 40,
+    paddingTop: 80,
     paddingHorizontal: 24,
     alignItems: 'center',
   },
   idle_greeting: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#1a1a2e',
     marginBottom: 8,
   },
   idle_subtitle: {
     fontSize: 15,
-    color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -298,12 +282,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#6C63FF',
     paddingVertical: 16,
     paddingHorizontal: 48,
     borderRadius: 20,
     width: '100%',
-    shadowColor: '#6C63FF',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -323,7 +305,6 @@ const styles = StyleSheet.create({
   },
   hint_text: {
     fontSize: 12,
-    color: '#9CA3AF',
     fontWeight: '500',
   },
 

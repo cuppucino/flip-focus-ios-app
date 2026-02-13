@@ -1,11 +1,14 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface StreakBadgeProps {
   streak: number;
 }
 
 export const StreakBadge: React.FC<StreakBadgeProps> = ({ streak }) => {
+  const { is_dark } = useTheme();
+
   if (streak === 0) return null;
 
   const get_streak_message = (days: number): string => {
@@ -18,11 +21,14 @@ export const StreakBadge: React.FC<StreakBadgeProps> = ({ streak }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.badge}>
+      <View style={[
+        styles.badge,
+        is_dark && { backgroundColor: 'rgba(254, 243, 199, 0.12)', borderColor: 'rgba(252, 211, 77, 0.3)' },
+      ]}>
         <Text style={styles.flame}>🔥</Text>
         <View style={styles.text_container}>
-          <Text style={styles.streak_number}>{streak}-day streak</Text>
-          <Text style={styles.streak_message}>{get_streak_message(streak)}</Text>
+          <Text style={[styles.streak_number, is_dark && { color: '#FCD34D' }]}>{streak}-day streak</Text>
+          <Text style={[styles.streak_message, is_dark && { color: '#FBBF24' }]}>{get_streak_message(streak)}</Text>
         </View>
       </View>
     </View>
